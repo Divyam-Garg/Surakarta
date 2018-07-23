@@ -43,6 +43,7 @@ The function get_board_state(board_string) will return a board state based on th
 >>> from reference import get_board_state
 >>> get_board_state('xxxx........oooo')
 [['x', '.', '.', 'o'], ['x', '.', '.', 'o'], ['x', '.', '.', 'o'], ['x', '.', '.', 'o']]
+
 Note that you can obtain the value of a specific location from a board state (ie, black, white, or empty): the first index will be the x-coordinate (column) and the second index will be the y-coordinate (row).
 
 
@@ -52,11 +53,13 @@ Note that you can obtain the value of a specific location from a board state (ie
 '.'
 >>> board[1][3]
 'o'
+
 The function get_board_string(board_state) will return a board string representation of the specified board state.
 
 >>> from reference import get_board_string
 >>> get_board_string([['x', '.', '.', 'o'], ['x', '.', '.', 'o'], ['x', '.', '.', 'o'], ['x', '.', '.', 'o']])
 'xxxx........oooo'
+
 The function draw_sura(board_string) will create a graphical representation of the board (as depicted in these instructions). You may pass a string of length 16 or 36, corresponding to a four-by-four or six-by-six board state respectively.
 
 --------------------------------------------------------------------------------------------------------------------------------------
