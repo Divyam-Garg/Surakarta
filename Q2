@@ -1,0 +1,221 @@
+from reference import get_board_state, get_board_string
+from itertools import cycle
+from math import sqrt
+
+def make_move_capture(board_string, start, end):
+    '''Takes as input a string representation of the current board state, a 
+       tuple representing the initial position of the piece to be moved 
+       (start), and a tuple representing the end position (end) the piece is 
+       to be moved to. Returns a string representation of the board reflecting 
+       the position of the pieces after the move if the move is valid. Returns
+       None if the move is invalid.'''
+    
+    #varialbes 'x4' and 'x6' store if board is 4x4 or 6x6
+    x4 = False
+    x6 = False
+    
+    #check dimensions of board
+    if len(board_string) == 16:
+        x4 = True
+    elif len(board_string) == 36:
+        x6 = True
+    else:
+        return None
+    
+    
+    size = sqrt(len(board_string))  #store dimension of board in 'size'
+    
+    stx = start[0]
+    sty = start[1]
+    endx = end[0]
+    endy = end[1]
+    
+    #check if coordinates of 'start' and 'end' inside the board
+    for i in [endx, endy, stx, sty]:
+        if not(0 <= i <= size-1):
+            return None
+    
+    board = get_board_state(board_string)
+    
+    #check that 'start' and 'end' coordinates are non empty and of opposite
+    #type (black and white)
+    if board[stx][sty] == '.':
+        return None
+    elif board[endx][endy] == '.':
+        return None
+    elif board[stx][sty] == board[endx][endy]:
+        return None
+    
+    #'corner_pairs' stores the values of the 2 entrances or exits of each loop
+    
+    if x4:
+        corner_pairs = [((1, 0), (0, 1)), ((2, 0), (3, 1)), ((0, 2), (1, 3)),
+                        ((3, 2), (2, 3))]
+        
+        #Going in any of the 4 directions, only some of the entrances can used 
+        #to enter a loop. eg. while going rightward only upper_rightward or
+        #lower_rightward corners can be used to enter into loop
+        upper_rightward_corners = [(3, 1)]
+        lower_rightward_corners = [(3, 2)]
+        upper_leftward_corners = [(0, 1)]
+        lower_leftward_corners = [(0, 2)]
+        right_upward_corners = [(2, 0)]
+        left_upward_corners = [(1, 0)]
+        right_downward_corners = [(2, 3)]
+        left_downward_corners = [(1, 3)]
+        
+    elif x6:
+        corner_pairs = [((1, 0), (0, 1)), ((4, 0), (5, 1)), ((0, 4), (1, 5)),
+                        ((4, 5), (5, 4)), ((2, 0), (0, 2)), ((3, 0), (5, 2)),
+                        ((0, 3), (2, 5)), ((5, 3), (3, 5))]
+        
+        #Going in any of the 4 directions, only some of the entrances can used 
+        #to enter a loop. eg. while going rightward only upper_rightward or
+        #lower_rightward corners can be used to enter into loop
+        upper_rightward_corners = [(5, 1), (5, 2)]
+        lower_rightward_corners = [(5, 3), (5, 4)]
+        upper_leftward_corners = [(0, 1), (0, 2)]
+        lower_leftward_corners = [(0, 3), (0, 4)]
+        right_upward_corners = [(3, 0), (4, 0)]
+        left_upward_corners = [(1, 0), (2, 0)]
+        right_downward_corners = [(3, 5), (4, 5)]
+        left_downward_corners = [(1, 5), (2, 5)]
+        
+    #stores corners of the board
+    green_corners = [(0, 0), (size-1, 0), (0, size-1), (size-1, size-1)]
+        
+    #if the moving piece starts looping, one of these will be used depending
+    #upon if it starts rotating clockwise with respect to board or otherwise
+    clockwise = ['right', 'down', 'left', 'up']
+    anticlockwise = ['up', 'left', 'down', 'right']
+    
+    #tells which corners send a piece moving in a particular direction 
+    #clockwise or anticlockwise
+    apt_corner_dict = {'right': {'clock': upper_rightward_corners,   
+                                 'anticlock': lower_rightward_corners}, 
+                       'down': {'clock': right_downward_corners, 
+                                'anticlock': left_downward_corners}, 
+                       'left': {'clock': lower_leftward_corners, 
+                                'anticlock': upper_leftward_corners}, 
+                       'up': {'clock': left_upward_corners,  
+                              'anticlock': right_upward_corners}}
+    
+    #moving 1 by 1 through all 4 directions
+    for start_mode in clockwise:            
+        x = stx
+        y = sty
+        pos = (x, y)  #keeps track of position on moving piece
+        board = get_board_state(board_string)
+        
+        continue_move = True  #tells if path ahead is clear
+        loop_traverse = False  #tells if a loop has been traversed
+        loop_count = 0
+        
+        #'move_mode' is direction in which piece is moving
+        move_mode = start_mode
+        
+        while continue_move:
+            #when piece reaches end, stop moving
+            if pos == end and loop_traverse:
+                    return get_board_string(board)
+                
+            #if piece in green_corners, stop moving
+            elif pos in green_corners:
+                continue_move = False
+            
+            #if piece returns to start, stop moving
+            elif pos == start and not(loop_count < 4):
+                continue_move = False
+            
+            #when piece reaches an apt corner
+            elif (pos in apt_corner_dict[f'{move_mode}']['clock'] or 
+                  pos in apt_corner_dict[f'{move_mode}']['anticlock']): 
+                
+                #check if next coordinates free to move or == end piece
+                for c in corner_pairs:
+                    if c[0] == pos:
+                        if board[c[1][0]][c[1][1]] == '.' or \
+                           c[1] == end:
+                            nextx = c[1][0]
+                            nexty = c[1][1]
+                        else:  
+                            continue_move = False
+                    elif c[1] == pos:
+                        if board[c[0][0]][c[0][1]] == '.' or \
+                           c[0] == end:
+                            nextx = c[0][0]
+                            nexty = c[0][1]
+                        else:
+                            continue_move = False
+                
+                #if first loop_traverse, set piece to clockwise or
+                #anticlockwise rotation
+                if not(loop_traverse) and continue_move:
+                    if pos in apt_corner_dict[f'{move_mode}']['clock']:
+                        move_modes = cycle(clockwise)
+                    elif pos in apt_corner_dict[f'{move_mode}']['anticlock']:        
+                        move_modes = cycle(anticlockwise)
+                        
+                    move_mode = next(move_modes)
+                    if move_mode != start_mode:
+                        while move_mode != start_mode:
+                            move_mode = next(move_modes)
+                    move_mode = next(move_modes)     
+                    loop_traverse = True
+                    loop_count += 1
+                
+                #if not first loop_traverse, change move_mode to next
+                #appropriate mode
+                elif loop_traverse and continue_move:
+                    move_mode = next(move_modes)
+                #update coordinates of pos
+                if continue_move:
+                    board[nextx][nexty] = board[x][y]
+                    board[x][y] = '.'
+                    x = nextx
+                    y = nexty
+                    pos = (x, y)
+            
+            #if none of the above,move in a straight line                    
+            else:
+                #stores how to move in straight line
+                how_to_move = {'up': {'x': x, 'y': y-1},
+                               'right': {'x': x+1, 'y': y},
+                               'down': {'x': x, 'y': y+1},
+                               'left': {'x': x-1, 'y': y}}
+                
+                #next appropriate coordinates
+                nextx = how_to_move[f'{move_mode}']['x']
+                nexty = how_to_move[f'{move_mode}']['y']
+                
+                #check if next coordinate empty or == end piece
+                if board[nextx][nexty] == '.' or \
+                   ((nextx, nexty) == end and loop_traverse):
+                    board[nextx][nexty] = board[x][y]
+                    board[x][y] = '.'
+                    x = nextx
+                    y = nexty
+                    pos = (x, y)
+                else:
+                    continue_move = False
+    return None    
+   
+    
+if __name__ == '__main__':
+    # Run the examples from the question.
+    print(make_move_capture('xxxx........oooo', (4, 0), (0, 3)), None)
+    print(make_move_capture('xxxx........oooo', (1, 0), (0, 4)), None)
+    print(make_move_capture('x.xx........oooo', (1, 1), (1, 3)), None)
+    print(make_move_capture('xxxx........oooo', (1, 3), (2, 2)), None)
+    print(make_move_capture('xxxx........oooo', (0, 0), (1, 1)), None)
+    print(make_move_capture('xxxx........oooo', (0, 1), (0, 3)), None)
+    print(make_move_capture('x.xx.x......oooo', (1, 1), (1, 3)) == 'x.xx........oxoo')
+    print(make_move_capture('x..x.....x..oooo', (1, 2), (2, 3)) == 'x..x........ooxo')
+    print(make_move_capture('xx.x........oo.o', (1, 0), (1, 3)) == 'x..x........ox.o')
+    print(make_move_capture('.x.xx.o.....oo.o', (1, 0), (2, 1)), None)
+    print(make_move_capture('x.xx.x....o.ox.o', (1, 1), (2, 2)), None)
+    print(make_move_capture('x.xx.x......oooo', (1, 3), (1, 1)), None)
+    print(make_move_capture('xxxx........oooo', (1, 0), (2, 0)), None)
+    
+    
+    
