@@ -1,0 +1,67 @@
+from reference import get_board_state, make_move_capture, make_move_normal
+from itertools import cycle
+
+def make_move_sequence(board_string, move_sequence):
+    '''Takes as arguments a string representation of the initial board state, 
+       and a list of tuples containing the start and end coordinates 
+       corresponding to a sequence of successive moves(both normal and capture)
+       Returns a string representation of the final board state if move
+       sequence is valid and returns None otherwise.'''
+    
+    #'new_board_string' stores latest representation of board as string
+    new_board_string = board_string 
+    board = get_board_state(new_board_string)
+    
+    #'current_turn' keeps track of whether 'x' or 'o' is supposed to move
+    turns = cycle(['x', 'o'])
+    current_turn = next(turns)
+    
+    #'first_turn' stores whether 'x' or 'o' moves first
+    first_turn = board[move_sequence[0][0][0]][move_sequence[0][0][1]]
+    
+    #make 'current_turn' == 'first_turn'
+    if first_turn == '.':
+        return None
+    else:
+        if current_turn != first_turn:
+            while current_turn != first_turn:
+                current_turn = next(turns)
+   
+    #iterate through each move in move_sequence            
+    for start, end in move_sequence:
+        
+        #CASE1: if neither normal nor capture move valid, return None
+        if make_move_normal(new_board_string, start, end) is None and \
+           make_move_capture(new_board_string, start, end) is None:
+            return None
+            
+        #CASE2: if either normal or capture move valid and piece at 'start' ==
+        #'current_turn', store resulting new board in 'new_board_string'. else
+        # return None
+        elif make_move_normal(new_board_string, start, end) is not None:
+            if board[start[0]][start[1]] == current_turn:
+                new_board_string = make_move_normal(new_board_string, start, 
+                                                    end)
+            else:
+                return None
+        else:
+            if board[start[0]][start[1]] == current_turn:
+                new_board_string = make_move_capture(new_board_string, start,
+                                                     end)
+            else:
+                return None
+        
+        #update 'board' and 'current_turn' to latest values
+        board = get_board_state(new_board_string)
+        current_turn = next(turns)    
+    
+    return new_board_string
+
+
+if __name__ == '__main__':
+    # Run the examples from the question.
+    print(make_move_sequence('xxxx........oooo', [((1, 0), (1, 1)), ((2, 3),
+                                                                     (1, 2))]))
+    print(make_move_sequence('x.xx.x...o..oo.o', [((1, 2), (2, 1)), ((1, 1),
+                                                                     (1, 3))]))
+    
