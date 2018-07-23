@@ -103,6 +103,7 @@ Assumptions: It can be either black or white's turn for any initial given board 
 'x.xx.x...o..oo.o'
 >>> print(make_move_sequence('x.xx.x...o..oo.o', [((1, 2), (2, 1)), ((1, 1), (1, 3))]))
 'x.xx..o.....ox.o'
+
 We have provided to you a reference implementation of the make_move_normal(board_string, start, end) function from Question 1 and make_move_capture(board_string, start, end) function from Question 2 that you can use here
 
 ---------------------------------------------------------------------------------------------------------------------------------------
